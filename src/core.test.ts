@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { debounce, searchCountries, HttpError } from './core';
+import {
+  debounce,
+  searchCountries,
+  HttpError,
+  mapCountryResponse,
+} from './core';
 
 describe('debounce', () => {
   beforeEach(() => {
@@ -77,5 +82,40 @@ describe('searchCountries', () => {
     const controller = new AbortController();
     const result = await searchCountries('test', controller.signal);
     expect(result).toEqual([]);
+  });
+});
+
+describe('mapCountryResponse', () => {
+  it('should map raw API response to country object', () => {
+    const raw = {
+      name: 'Testland',
+      flags: { png: 'flag.png' },
+      capital: 'Test City',
+      region: 'Test Region',
+      population: 1000,
+      languages: [{ name: 'Testish' }],
+      area: 500,
+      borders: ['A', 'B'],
+      currencies: [{ name: 'Test Coin' }],
+    };
+    const result = mapCountryResponse(raw);
+    expect(result).toEqual({
+      name: 'Testland',
+      flag: 'flag.png',
+      capital: 'Test City',
+      region: 'Test Region',
+      population: 1000,
+      languages: ['Testish'],
+      area: 500,
+      borders: ['A', 'B'],
+      currency: 'Test Coin',
+    });
+  });
+
+  it('should handle missing fields gracefully', () => {
+    const raw = { name: 'EmptyLand' };
+    const result = mapCountryResponse(raw);
+    expect(result.name).toBe('EmptyLand');
+    expect(result.capital).toBe('N/A');
   });
 });

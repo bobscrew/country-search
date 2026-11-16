@@ -142,3 +142,37 @@ describe('handleFetchError', () => {
     expect(handleFetchError(error)).toBe('error');
   });
 });
+
+describe('Race condition', () => {
+  it('should only render the result of the latest request', async () => {
+    let resolveFirst: (value: unknown) => void;
+    let resolveSecond: (value: unknown) => void;
+    const firstPromise = new Promise((resolve) => {
+      resolveFirst = resolve;
+    });
+    const secondPromise = new Promise((resolve) => {
+      resolveSecond = resolve;
+    });
+
+    const mockFetch = vi
+      .fn()
+      .mockReturnValueOnce(firstPromise)
+      .mockReturnValueOnce(secondPromise);
+    vi.stubGlobal('fetch', mockFetch);
+
+    const controller1 = new AbortController();
+    const p1 = searchCountries('a', controller1.signal);
+
+    const controller2 = new AbortController();
+    const p2 = searchCountries('ab', controller2.signal);
+
+    controller1.abort();
+
+    resolveSecond!([{ name: 'Second' }]);
+    const result = await p2;
+    expect(result).toEqual([{ name: 'Second' }]);
+
+    resolveFirst!([{ name: 'First' }]);
+    await expect(p1).rejects.toThrow();
+  });
+});

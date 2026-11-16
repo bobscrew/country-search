@@ -59,3 +59,13 @@ export function mapCountryResponse(raw: Record<string, unknown>): Country {
     currency: (raw.currencies as Record<string, string>[])?.[0]?.name,
   };
 }
+
+export type FetchErrorType = 'cancelled' | 'timeout' | 'error';
+
+export function handleFetchError(error: unknown): FetchErrorType {
+  if (error instanceof DOMException) {
+    if (error.name === 'AbortError') return 'cancelled';
+    if (error.name === 'TimeoutError') return 'timeout';
+  }
+  return 'error';
+}

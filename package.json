@@ -7,13 +7,15 @@
     "test": "vitest run",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "deploy": "npm run build && cp index.html dist/ && gh-pages -d dist"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.50.0",
+    "gh-pages": "^6.3.0",
     "husky": "^9.1.7",
     "jsdom": "^22.0.0",
     "lint-staged": "^15.0.0",

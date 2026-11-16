@@ -145,19 +145,28 @@ describe('handleFetchError', () => {
 
 describe('Race condition', () => {
   it('should only render the result of the latest request', async () => {
-    let resolveFirst: (value: unknown) => void;
-    let resolveSecond: (value: unknown) => void;
-    const firstPromise = new Promise((resolve) => {
-      resolveFirst = resolve;
-    });
-    const secondPromise = new Promise((resolve) => {
-      resolveSecond = resolve;
+    let rejectFirst: (reason?: unknown) => void;
+
+    const firstPromise = new Promise((_resolve, reject) => {
+      rejectFirst = reject;
     });
 
-    const mockFetch = vi
-      .fn()
-      .mockReturnValueOnce(firstPromise)
-      .mockReturnValueOnce(secondPromise);
+    const secondResponse = {
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve([{ name: 'Second' }]),
+    };
+
+    const mockFetch = vi.fn((url: string, options: { signal: AbortSignal }) => {
+      if (url.includes('a') && !url.includes('ab')) {
+        options.signal.addEventListener('abort', () => {
+          rejectFirst(new DOMException('Aborted', 'AbortError'));
+        });
+        return firstPromise;
+      }
+      return Promise.resolve(secondResponse);
+    });
+
     vi.stubGlobal('fetch', mockFetch);
 
     const controller1 = new AbortController();
@@ -168,11 +177,13 @@ describe('Race condition', () => {
 
     controller1.abort();
 
-    resolveSecond!([{ name: 'Second' }]);
+    const p1Catch = p1.catch((err) => err);
+
     const result = await p2;
     expect(result).toEqual([{ name: 'Second' }]);
 
-    resolveFirst!([{ name: 'First' }]);
-    await expect(p1).rejects.toThrow();
+    const error = await p1Catch;
+    expect(error).toBeInstanceOf(DOMException);
+    expect((error as DOMException).name).toBe('AbortError');
   });
 });

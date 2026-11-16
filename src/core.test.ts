@@ -4,6 +4,7 @@ import {
   searchCountries,
   HttpError,
   mapCountryResponse,
+  handleFetchError,
 } from './core';
 
 describe('debounce', () => {
@@ -117,5 +118,27 @@ describe('mapCountryResponse', () => {
     const result = mapCountryResponse(raw);
     expect(result.name).toBe('EmptyLand');
     expect(result.capital).toBe('N/A');
+  });
+});
+
+describe('handleFetchError', () => {
+  it('should identify AbortError as cancellation', () => {
+    const error = new DOMException('Aborted', 'AbortError');
+    expect(handleFetchError(error)).toBe('cancelled');
+  });
+
+  it('should identify TimeoutError as timeout', () => {
+    const error = new DOMException('Timeout', 'TimeoutError');
+    expect(handleFetchError(error)).toBe('timeout');
+  });
+
+  it('should identify HttpError as network error', () => {
+    const error = new HttpError(500, 'Server Error');
+    expect(handleFetchError(error)).toBe('error');
+  });
+
+  it('should identify generic error as error', () => {
+    const error = new Error('Network failed');
+    expect(handleFetchError(error)).toBe('error');
   });
 });

@@ -35,16 +35,6 @@ detailView.id = 'detail-view';
 
 app.append(input, historyContainer, status, retryBtn, list, detailView);
 
-const updateLayout = (hasResults: boolean) => {
-  if (hasResults) {
-    document.body.classList.remove('empty');
-    document.body.classList.add('results');
-  } else {
-    document.body.classList.remove('results');
-    document.body.classList.add('empty');
-  }
-};
-
 const renderHistory = () => {
   historyContainer.innerHTML = '';
   const history = getHistory();
@@ -66,11 +56,8 @@ const render = (countries: Country[]) => {
   list.innerHTML = '';
 
   if (countries.length === 0) {
-    updateLayout(false);
     return;
   }
-
-  updateLayout(true);
 
   countries.forEach((c) => {
     const card = document.createElement('div');
@@ -120,7 +107,6 @@ const doSearch = async (query: string) => {
   retryBtn.style.display = 'none';
   detailView.style.display = 'none';
   list.style.display = 'grid';
-  updateLayout(false);
 
   try {
     const timeoutSignal = AbortSignal.timeout(5000);
@@ -144,7 +130,6 @@ const doSearch = async (query: string) => {
 
     retryBtn.style.display = 'block';
     retryBtn.onclick = () => doSearch(lastQuery);
-    updateLayout(false);
   }
 };
 
@@ -155,7 +140,6 @@ const debouncedSearch = debounce((query: unknown) => {
     status.textContent = '';
     detailView.style.display = 'none';
     if (lastController) lastController.abort();
-    updateLayout(false);
     return;
   }
   doSearch(q);
@@ -172,5 +156,4 @@ input.addEventListener('input', (e) => {
   debouncedSearch(target.value);
 });
 
-updateLayout(false);
 renderHistory();

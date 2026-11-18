@@ -12,19 +12,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: padding-top 0.4s ease;
-  padding: 20px;
-}
-
-/* Когда результатов нет — центрируем по вертикали */
-body.empty {
-  justify-content: center;
-}
-
-/* Когда есть результаты — прижимаем к верху */
-body.results {
-  justify-content: flex-start;
-  padding-top: 80px;
+  padding-top: 60px;
+  padding-bottom: 40px;
 }
 
 #app {
@@ -53,6 +42,33 @@ input[type='text']:focus {
   background-color: #303134;
   border-color: #8ab4f8;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+#history-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 15px;
+  max-width: 600px;
+  min-height: 32px;
+}
+
+.history-tag {
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #444;
+  transition: all 0.2s;
+}
+
+.history-tag:hover {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
 }
 
 #status {
@@ -157,30 +173,4 @@ input[type='text']:focus {
 
 #detail-view strong {
   color: #fff;
-}
-
-#history-container {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 15px;
-  max-width: 600px;
-}
-
-.history-tag {
-  background-color: #2d2d2d;
-  color: #e0e0e0;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  cursor: pointer;
-  border: 1px solid #444;
-  transition: all 0.2s;
-}
-
-.history-tag:hover {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
-  color: white;
 }

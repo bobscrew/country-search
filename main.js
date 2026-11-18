@@ -20,16 +20,6 @@ list.id = 'list';
 const detailView = document.createElement('div');
 detailView.id = 'detail-view';
 app.append(input, historyContainer, status, retryBtn, list, detailView);
-const updateLayout = (hasResults) => {
-    if (hasResults) {
-        document.body.classList.remove('empty');
-        document.body.classList.add('results');
-    }
-    else {
-        document.body.classList.remove('results');
-        document.body.classList.add('empty');
-    }
-};
 const renderHistory = () => {
     historyContainer.innerHTML = '';
     const history = getHistory();
@@ -49,10 +39,8 @@ const renderHistory = () => {
 const render = (countries) => {
     list.innerHTML = '';
     if (countries.length === 0) {
-        updateLayout(false);
         return;
     }
-    updateLayout(true);
     countries.forEach((c) => {
         const card = document.createElement('div');
         card.className = 'card';
@@ -93,7 +81,6 @@ const doSearch = async (query) => {
     retryBtn.style.display = 'none';
     detailView.style.display = 'none';
     list.style.display = 'grid';
-    updateLayout(false);
     try {
         const timeoutSignal = AbortSignal.timeout(5000);
         const combinedSignal = AbortSignal.any([controller.signal, timeoutSignal]);
@@ -108,13 +95,11 @@ const doSearch = async (query) => {
         const type = handleFetchError(error);
         if (type === 'cancelled')
             return;
-        status.textContent =
-            type === 'timeout'
-                ? 'Timeout error. Please try again.'
-                : 'Error occurred. Please try again.';
+        status.textContent = type === 'timeout'
+            ? 'Timeout error. Please try again.'
+            : 'Error occurred. Please try again.';
         retryBtn.style.display = 'block';
         retryBtn.onclick = () => doSearch(lastQuery);
-        updateLayout(false);
     }
 };
 const debouncedSearch = debounce((query) => {
@@ -125,7 +110,6 @@ const debouncedSearch = debounce((query) => {
         detailView.style.display = 'none';
         if (lastController)
             lastController.abort();
-        updateLayout(false);
         return;
     }
     doSearch(q);
@@ -138,5 +122,4 @@ input.addEventListener('input', (e) => {
     }
     debouncedSearch(target.value);
 });
-updateLayout(false);
 renderHistory();

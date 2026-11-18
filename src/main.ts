@@ -9,7 +9,7 @@ import {
 const app = document.getElementById('app');
 if (!app) throw new Error('App container not found');
 
-let controller: AbortController | null = null;
+let lastController: AbortController | null = null;
 let lastQuery = '';
 
 const input = document.createElement('input');
@@ -92,8 +92,8 @@ const render = (countries: Country[]) => {
 };
 
 const doSearch = async (query: string) => {
-  if (controller) controller.abort();
-  controller = new AbortController();
+  const controller = new AbortController();
+  lastController = controller;
   lastQuery = query;
   status.textContent = 'Loading...';
   retryBtn.style.display = 'none';
@@ -112,7 +112,6 @@ const doSearch = async (query: string) => {
     status.textContent = mapped.length === 0 ? 'No results found.' : '';
   } catch (error) {
     const type = handleFetchError(error);
-
     if (type === 'cancelled') return;
 
     status.textContent =
@@ -132,7 +131,7 @@ const debouncedSearch = debounce((query: unknown) => {
     list.innerHTML = '';
     status.textContent = '';
     detailView.style.display = 'none';
-    if (controller) controller.abort();
+    if (lastController) lastController.abort();
     updateLayout(false);
     return;
   }
@@ -141,6 +140,12 @@ const debouncedSearch = debounce((query: unknown) => {
 
 input.addEventListener('input', (e) => {
   const target = e.target as HTMLInputElement;
+
+  if (lastController) {
+    lastController.abort();
+    lastController = null;
+  }
+
   debouncedSearch(target.value);
 });
 

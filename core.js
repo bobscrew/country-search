@@ -15,15 +15,42 @@ export class HttpError extends Error {
         this.name = 'HttpError';
     }
 }
+const cache = new Map();
+const inFlight = new Map();
 export async function searchCountries(query, signal) {
-    const response = await fetch(`https://countries.dev/name/${query}`, {
-        signal,
-    });
-    if (response.status === 404)
-        return [];
-    if (!response.ok)
-        throw new HttpError(response.status, 'API Error');
-    return response.json();
+    if (cache.has(query)) {
+        return cache.get(query);
+    }
+    if (inFlight.has(query)) {
+        return inFlight.get(query);
+    }
+    const promise = (async () => {
+        const response = await fetch(`https://countries.dev/name/${query}`, {
+            signal,
+        });
+        if (response.status === 404)
+            return [];
+        if (!response.ok)
+            throw new HttpError(response.status, 'API Error');
+        const data = (await response.json());
+        cache.set(query, data);
+        return data;
+    })();
+    inFlight.set(query, promise);
+    try {
+        const result = await promise;
+        return result;
+    }
+    catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+            // Если запрос отменили, удаляем из inFlight, чтобы можно было повторить
+            inFlight.delete(query);
+        }
+        throw error;
+    }
+    finally {
+        inFlight.delete(query);
+    }
 }
 export function mapCountryResponse(raw) {
     return {
@@ -46,4 +73,8 @@ export function handleFetchError(error) {
             return 'timeout';
     }
     return 'error';
+}
+export function clearCache() {
+    cache.clear();
+    inFlight.clear();
 }

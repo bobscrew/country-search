@@ -1,12 +1,15 @@
-import { debounce, searchCountries, mapCountryResponse, handleFetchError } from './core.js';
+import { debounce, searchCountries, mapCountryResponse, handleFetchError, } from './core.js';
+import { getHistory, addToHistory } from './history.js';
 const app = document.getElementById('app');
 if (!app)
     throw new Error('App container not found');
-let controller = null;
+let lastController = null;
 let lastQuery = '';
 const input = document.createElement('input');
 input.type = 'text';
 input.placeholder = 'Search country...';
+const historyContainer = document.createElement('div');
+historyContainer.id = 'history-container';
 const status = document.createElement('div');
 status.id = 'status';
 const retryBtn = document.createElement('button');
@@ -16,7 +19,7 @@ const list = document.createElement('div');
 list.id = 'list';
 const detailView = document.createElement('div');
 detailView.id = 'detail-view';
-app.append(input, status, retryBtn, list, detailView);
+app.append(input, historyContainer, status, retryBtn, list, detailView);
 const updateLayout = (hasResults) => {
     if (hasResults) {
         document.body.classList.remove('empty');
@@ -26,6 +29,22 @@ const updateLayout = (hasResults) => {
         document.body.classList.remove('results');
         document.body.classList.add('empty');
     }
+};
+const renderHistory = () => {
+    historyContainer.innerHTML = '';
+    const history = getHistory();
+    if (history.length === 0)
+        return;
+    history.forEach((item) => {
+        const tag = document.createElement('span');
+        tag.className = 'history-tag';
+        tag.textContent = item;
+        tag.addEventListener('click', () => {
+            input.value = item;
+            debouncedSearch(item);
+        });
+        historyContainer.append(tag);
+    });
 };
 const render = (countries) => {
     list.innerHTML = '';
@@ -67,9 +86,8 @@ const render = (countries) => {
     });
 };
 const doSearch = async (query) => {
-    if (controller)
-        controller.abort();
-    controller = new AbortController();
+    const controller = new AbortController();
+    lastController = controller;
     lastQuery = query;
     status.textContent = 'Loading...';
     retryBtn.style.display = 'none';
@@ -82,15 +100,18 @@ const doSearch = async (query) => {
         const raw = await searchCountries(query, combinedSignal);
         const mapped = raw.map(mapCountryResponse);
         render(mapped);
+        addToHistory(query);
+        renderHistory();
         status.textContent = mapped.length === 0 ? 'No results found.' : '';
     }
     catch (error) {
         const type = handleFetchError(error);
         if (type === 'cancelled')
             return;
-        status.textContent = type === 'timeout'
-            ? 'Timeout error. Please try again.'
-            : 'Error occurred. Please try again.';
+        status.textContent =
+            type === 'timeout'
+                ? 'Timeout error. Please try again.'
+                : 'Error occurred. Please try again.';
         retryBtn.style.display = 'block';
         retryBtn.onclick = () => doSearch(lastQuery);
         updateLayout(false);
@@ -102,8 +123,8 @@ const debouncedSearch = debounce((query) => {
         list.innerHTML = '';
         status.textContent = '';
         detailView.style.display = 'none';
-        if (controller)
-            controller.abort();
+        if (lastController)
+            lastController.abort();
         updateLayout(false);
         return;
     }
@@ -111,6 +132,11 @@ const debouncedSearch = debounce((query) => {
 }, 300);
 input.addEventListener('input', (e) => {
     const target = e.target;
+    if (lastController) {
+        lastController.abort();
+        lastController = null;
+    }
     debouncedSearch(target.value);
 });
 updateLayout(false);
+renderHistory();

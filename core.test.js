@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { debounce, searchCountries, HttpError, mapCountryResponse, handleFetchError, } from './core';
+import { debounce, searchCountries, HttpError, mapCountryResponse, handleFetchError, clearCache, } from './core';
 describe('debounce', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -30,6 +30,7 @@ describe('debounce', () => {
 describe('searchCountries', () => {
     let mockFetch;
     beforeEach(() => {
+        clearCache();
         mockFetch = vi.fn();
         vi.stubGlobal('fetch', mockFetch);
     });
@@ -120,10 +121,8 @@ describe('handleFetchError', () => {
 });
 describe('Race condition', () => {
     it('should only render the result of the latest request', async () => {
-        let resolveFirst;
         let rejectFirst;
-        const firstPromise = new Promise((resolve, reject) => {
-            resolveFirst = resolve;
+        const firstPromise = new Promise((_resolve, reject) => {
             rejectFirst = reject;
         });
         const secondResponse = {

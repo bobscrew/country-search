@@ -158,3 +158,29 @@ input[type='text']:focus {
 #detail-view strong {
   color: #fff;
 }
+
+#history-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 15px;
+  max-width: 600px;
+}
+
+.history-tag {
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #444;
+  transition: all 0.2s;
+}
+
+.history-tag:hover {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}

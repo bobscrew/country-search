@@ -5,6 +5,7 @@ import {
   HttpError,
   mapCountryResponse,
   handleFetchError,
+  clearCache,
 } from './core';
 
 describe('debounce', () => {
@@ -42,6 +43,7 @@ describe('searchCountries', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    clearCache();
     mockFetch = vi.fn();
     vi.stubGlobal('fetch', mockFetch);
   });

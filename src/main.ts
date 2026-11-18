@@ -5,6 +5,7 @@ import {
   handleFetchError,
   Country,
 } from './core.js';
+import { getHistory, addToHistory } from './history.js';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('App container not found');
@@ -15,6 +16,9 @@ let lastQuery = '';
 const input = document.createElement('input');
 input.type = 'text';
 input.placeholder = 'Search country...';
+
+const historyContainer = document.createElement('div');
+historyContainer.id = 'history-container';
 
 const status = document.createElement('div');
 status.id = 'status';
@@ -29,7 +33,7 @@ list.id = 'list';
 const detailView = document.createElement('div');
 detailView.id = 'detail-view';
 
-app.append(input, status, retryBtn, list, detailView);
+app.append(input, historyContainer, status, retryBtn, list, detailView);
 
 const updateLayout = (hasResults: boolean) => {
   if (hasResults) {
@@ -39,6 +43,23 @@ const updateLayout = (hasResults: boolean) => {
     document.body.classList.remove('results');
     document.body.classList.add('empty');
   }
+};
+
+const renderHistory = () => {
+  historyContainer.innerHTML = '';
+  const history = getHistory();
+  if (history.length === 0) return;
+
+  history.forEach((item) => {
+    const tag = document.createElement('span');
+    tag.className = 'history-tag';
+    tag.textContent = item;
+    tag.addEventListener('click', () => {
+      input.value = item;
+      debouncedSearch(item);
+    });
+    historyContainer.append(tag);
+  });
 };
 
 const render = (countries: Country[]) => {
@@ -109,6 +130,8 @@ const doSearch = async (query: string) => {
     const mapped = (raw as Record<string, unknown>[]).map(mapCountryResponse);
 
     render(mapped);
+    addToHistory(query);
+    renderHistory();
     status.textContent = mapped.length === 0 ? 'No results found.' : '';
   } catch (error) {
     const type = handleFetchError(error);
@@ -150,3 +173,4 @@ input.addEventListener('input', (e) => {
 });
 
 updateLayout(false);
+renderHistory();

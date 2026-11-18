@@ -21,16 +21,46 @@ export class HttpError extends Error {
   }
 }
 
+const cache = new Map<string, unknown[]>();
+const inFlight = new Map<string, Promise<unknown[]>>();
+
 export async function searchCountries(
   query: string,
   signal?: AbortSignal
 ): Promise<unknown[]> {
-  const response = await fetch(`https://countries.dev/name/${query}`, {
-    signal,
-  });
-  if (response.status === 404) return [];
-  if (!response.ok) throw new HttpError(response.status, 'API Error');
-  return response.json() as Promise<unknown[]>;
+  if (cache.has(query)) {
+    return cache.get(query) as unknown[];
+  }
+
+  if (inFlight.has(query)) {
+    return inFlight.get(query) as Promise<unknown[]>;
+  }
+
+  const promise = (async () => {
+    const response = await fetch(`https://countries.dev/name/${query}`, {
+      signal,
+    });
+    if (response.status === 404) return [];
+    if (!response.ok) throw new HttpError(response.status, 'API Error');
+    const data = (await response.json()) as unknown[];
+    cache.set(query, data);
+    return data;
+  })();
+
+  inFlight.set(query, promise);
+
+  try {
+    const result = await promise;
+    return result;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      // Если запрос отменили, удаляем из inFlight, чтобы можно было повторить
+      inFlight.delete(query);
+    }
+    throw error;
+  } finally {
+    inFlight.delete(query);
+  }
 }
 
 export interface Country {
@@ -68,4 +98,9 @@ export function handleFetchError(error: unknown): FetchErrorType {
     if (error.name === 'TimeoutError') return 'timeout';
   }
   return 'error';
+}
+
+export function clearCache() {
+  cache.clear();
+  inFlight.clear();
 }
